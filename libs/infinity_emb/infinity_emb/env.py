@@ -231,10 +231,9 @@ class __Infinity_EnvManager:
     def log_level(self):
         return self._optional_infinity_var("log_level", default="info")
 
-    def _typed_multiple(self, name: str, cls: type["EnumTypeLike"]) -> list["str"]:
+    def _typed_multiple(self, name: str, cls: type["EnumTypeLike"]) -> list["EnumTypeLike"]:
         result = self._optional_infinity_var_multiple(name, default=[cls.default_value()])
-        tuple(cls(v) for v in result)  # check if all values are valid
-        return result
+        return [cls(v) for v in result]  # Return enum instances, not strings
 
     @cached_property
     def dtype(self) -> list[str]:

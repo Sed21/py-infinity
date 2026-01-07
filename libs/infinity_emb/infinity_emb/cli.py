@@ -80,8 +80,8 @@ def _construct(name: str):
     return dict(
         # gets the default value from the ENV Manager
         default=getattr(MANAGER, name),
-        # envvar is a dummy that is there for documentation purposes.
-        envvar=f"`{MANAGER.to_name(name)}`",
+        # envvar is the actual env variable name (without backticks)
+        envvar=MANAGER.to_name(name),
     )
 
 

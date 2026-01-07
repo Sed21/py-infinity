@@ -2,7 +2,7 @@
 # Copyright (c) 2023-now michaelfeil
 
 """
-Optional imports for CPU-only infinity-emb.
+Optional imports for CPU-only infinity-emb (optimum-first).
 """
 
 from __future__ import annotations
@@ -57,16 +57,15 @@ class OptionalImports:
         raise ImportError(msg)
 
 
-# Core imports
+# Core imports (optimum-first architecture)
 CHECK_AIOHTTP = OptionalImports("aiohttp", "server")
-CHECK_CTRANSLATE2 = OptionalImports("ctranslate2", "ct2")
 CHECK_DISKCACHE = OptionalImports("diskcache", "cache")
 CHECK_FASTAPI = OptionalImports("fastapi", "server")
-CHECK_ONNXRUNTIME = OptionalImports("optimum.onnxruntime", "optimum")
-CHECK_OPTIMUM = OptionalImports("optimum", "optimum")
+CHECK_ONNXRUNTIME = OptionalImports("onnxruntime", "all")
+CHECK_OPTIMUM = OptionalImports("optimum", "all")
 CHECK_PYDANTIC = OptionalImports("pydantic", "server")
-CHECK_SENTENCE_TRANSFORMERS = OptionalImports("sentence_transformers", "torch")
+CHECK_SENTENCE_TRANSFORMERS = OptionalImports("sentence_transformers", "all")
 CHECK_TORCH = OptionalImports("torch.nn", "torch")
-CHECK_TRANSFORMERS = OptionalImports("transformers", "torch")
+CHECK_TRANSFORMERS = OptionalImports("transformers", "all")
 CHECK_TYPER = OptionalImports("typer", "server")
 CHECK_UVICORN = OptionalImports("uvicorn", "server")

@@ -93,15 +93,14 @@ class EmbeddingEncodingFormat(EnumType):
 
 
 class InferenceEngine(EnumType):
-    torch = "torch"
-    ctranslate2 = "ctranslate2"
+    """Available inference engines. optimum (ONNX) is primary for CPU performance."""
     optimum = "optimum"
-    neuron = "neuron"
+    torch = "torch"
     debugengine = "debugengine"
 
     @staticmethod
     def default_value():
-        return InferenceEngine.torch.value
+        return InferenceEngine.optimum.value
 
 
 class Device(EnumType):

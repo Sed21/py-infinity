@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2023-now michaelfeil
 
+"""
+Optimum utilities for ONNX inference (CPU-only).
+"""
+
 from pathlib import Path
 from typing import Optional, Union
 
@@ -8,7 +12,7 @@ import numpy as np
 from huggingface_hub import HfApi, HfFolder  # type: ignore
 from huggingface_hub.constants import HUGGINGFACE_HUB_CACHE  # type: ignore
 
-from infinity_emb._optional_imports import CHECK_ONNXRUNTIME, CHECK_OPTIMUM_AMD
+from infinity_emb._optional_imports import CHECK_ONNXRUNTIME
 
 from infinity_emb.log_handler import logger
 from infinity_emb.primitives import Device
@@ -123,16 +127,6 @@ def optimize_model(
                 # "trt_int8_use_native_calibration_table": True,
                 # "trt_int8_enable": "quantize" in file_name,
             },
-        )
-
-    elif execution_provider in ["ROCMExecutionProvider", "MIGraphXExecutionProvider"]:
-        CHECK_OPTIMUM_AMD.mark_required()
-        return model_class.from_pretrained(
-            model_name_or_path,
-            revision=revision,
-            trust_remote_code=trust_remote_code,
-            provider=execution_provider,
-            file_name=file_name,
         )
 
     ## path to find if model has been optimized

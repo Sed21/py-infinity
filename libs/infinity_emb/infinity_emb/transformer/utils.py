@@ -2,7 +2,7 @@
 # Copyright (c) 2023-now michaelfeil
 
 """
-CPU-only transformer utilities - no vision or audio support.
+CPU-only transformer utilities - optimum-first architecture.
 """
 
 from enum import Enum
@@ -15,9 +15,7 @@ from infinity_emb.transformer.crossencoder.optimum import OptimumCrossEncoder
 from infinity_emb.transformer.crossencoder.torch import (
     CrossEncoderPatched as CrossEncoderTorch,
 )
-from infinity_emb.transformer.embedder.ct2 import CT2SentenceTransformer
 from infinity_emb.transformer.embedder.dummytransformer import DummyTransformer
-from infinity_emb.transformer.embedder.neuron import NeuronOptimumEmbedder
 from infinity_emb.transformer.embedder.optimum import OptimumEmbedder
 from infinity_emb.transformer.embedder.sentence_transformer import (
     SentenceTransformerPatched,
@@ -30,52 +28,51 @@ __all__ = [
 
 
 class EmbedderEngine(Enum):
-    torch = SentenceTransformerPatched
-    ctranslate2 = CT2SentenceTransformer
-    debugengine = DummyTransformer
+    """
+    Available embedding engines.
+    optimum (ONNX) is the primary engine for CPU performance.
+    torch is available as a fallback for maximum compatibility.
+    """
     optimum = OptimumEmbedder
-    neuron = NeuronOptimumEmbedder
+    torch = SentenceTransformerPatched
+    debugengine = DummyTransformer
 
     @staticmethod
     def from_inference_engine(engine: InferenceEngine):
-        if engine == InferenceEngine.torch:
+        if engine == InferenceEngine.optimum:
+            return EmbedderEngine.optimum
+        elif engine == InferenceEngine.torch:
             return EmbedderEngine.torch
-        elif engine == InferenceEngine.ctranslate2:
-            return EmbedderEngine.ctranslate2
         elif engine == InferenceEngine.debugengine:
             return EmbedderEngine.debugengine
-        elif engine == InferenceEngine.optimum:
-            return EmbedderEngine.optimum
-        elif engine == InferenceEngine.neuron:
-            return EmbedderEngine.neuron
         else:
             raise NotImplementedError(f"EmbedderEngine for {engine} not implemented")
 
 
 class RerankEngine(Enum):
-    torch = CrossEncoderTorch
     optimum = OptimumCrossEncoder
+    torch = CrossEncoderTorch
 
     @staticmethod
     def from_inference_engine(engine: InferenceEngine):
-        if engine == InferenceEngine.torch:
-            return RerankEngine.torch
-        elif engine == InferenceEngine.optimum:
+        if engine == InferenceEngine.optimum:
             return RerankEngine.optimum
+        elif engine == InferenceEngine.torch:
+            return RerankEngine.torch
         else:
             raise NotImplementedError(f"RerankEngine for {engine} not implemented")
 
 
 class PredictEngine(Enum):
-    torch = SentenceClassifier
     optimum = OptimumClassifier
+    torch = SentenceClassifier
 
     @staticmethod
     def from_inference_engine(engine: InferenceEngine):
-        if engine == InferenceEngine.torch:
-            return PredictEngine.torch
-        elif engine == InferenceEngine.optimum:
+        if engine == InferenceEngine.optimum:
             return PredictEngine.optimum
+        elif engine == InferenceEngine.torch:
+            return PredictEngine.torch
         else:
             raise NotImplementedError(f"PredictEngine for {engine} not implemented")
 

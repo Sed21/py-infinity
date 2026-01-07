@@ -1,22 +1,20 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2023-now michaelfeil
 
+"""
+CPU-only abstract transformer classes - no vision or audio support.
+"""
+
 import random
 from abc import ABC, abstractmethod
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Union
 
-from infinity_emb._optional_imports import CHECK_PIL  # , CHECK_SOUNDFILE
 from infinity_emb.primitives import (
-    AudioInner,
-    AudioInputType,
-    # AudioSingle,
     EmbeddingDtype,
     EmbeddingInner,
     EmbeddingReturnType,
     EmbeddingSingle,
-    ImageInner,
-    ImageSingle,
     ModelCapabilites,
     PredictInner,
     PredictSingle,
@@ -30,15 +28,7 @@ OUT_FEATURES = Any
 
 
 if TYPE_CHECKING:
-    from PIL.Image import Image as ImageClass
-
     from infinity_emb.args import EngineArgs
-
-if CHECK_PIL.is_available:
-    from PIL import Image
-
-# if CHECK_SOUNDFILE:
-#     import soundfile as sf
 
 
 class BaseTransformer(ABC):  # Inherit from ABC(Abstract base class)
@@ -93,89 +83,6 @@ class BaseEmbedder(BaseTransformer):  # Inherit from ABC(Abstract base class)
         return run_warmup(self, inp)
 
 
-class BaseTIMM(BaseEmbedder):  # Inherit from ABC(Abstract base class)
-    capabilities = {"embed", "image_embed"}
-
-    @property
-    def embedding_dtype(self) -> EmbeddingDtype:
-        """returns the dtype of the embeddings"""
-        return self.engine_args.embedding_dtype
-
-    @abstractmethod  # Decorator to define an abstract method
-    def encode_pre(self, sentences_or_images: list[Union[str, "ImageClass"]]) -> INPUT_FEATURE:
-        """
-        takes a list of sentences, or a list of images.
-        Images could be url or numpy arrays/pil
-        """
-
-    @abstractmethod
-    def encode_post(self, embedding: OUT_FEATURES, skip_quanitzation=True) -> EmbeddingReturnType:
-        """runs post encoding such as normalization"""
-
-    def warmup(self, *, batch_size: int = 64, n_tokens=1) -> tuple[float, float, str]:
-        sample_text = ["warm " * n_tokens] * max(1, batch_size // 2)
-        sample_image = [Image.new("RGB", (128, 128), (255, 255, 255))] * max(1, batch_size // 2)  # type: ignore
-        inp = [
-            # TODO: warmup for images
-            ImageInner(content=ImageSingle(image=img), future=None)  # type: ignore
-            for img in sample_image
-        ] + [
-            EmbeddingInner(
-                content=EmbeddingSingle(sentence=s),
-                future=None,  # type: ignore
-            )
-            for s in sample_text
-        ]
-        random.shuffle(inp)
-
-        return run_warmup(self, inp)
-
-
-class BaseAudioEmbedModel(BaseEmbedder):  # Inherit from ABC(Abstract base class)
-    capabilities = {"embed", "audio_embed"}
-
-    @property
-    def embedding_dtype(self) -> EmbeddingDtype:
-        """returns the dtype of the embeddings"""
-        return self.engine_args.embedding_dtype  # type: ignore
-
-    @property
-    def sampling_rate(self) -> int:
-        raise NotImplementedError
-
-    @abstractmethod  # Decorator to define an abstract method
-    def encode_pre(self, sentences_or_audios: list[Union[str, AudioInputType]]) -> INPUT_FEATURE:
-        """
-        takes a list of sentences, or a list of audios.
-        Audios could be raw byte array of the wave file
-        """
-
-    @abstractmethod
-    def encode_post(self, embedding: OUT_FEATURES, skip_quanitzation=True) -> EmbeddingReturnType:
-        """runs post encoding such as normalization"""
-
-    def warmup(self, *, batch_size: int = 64, n_tokens=1) -> tuple[float, float, str]:
-        sample_text = ["warm " * n_tokens] * max(1, batch_size // 2)
-        # sample_audios = [sf.SoundFile()] * max(1, batch_size // 2)  # type: ignore
-        inp: list[Union[AudioInner, EmbeddingInner]] = (
-            [
-                # TODO: warmup for audio
-                # AudioInner(content=AudioSingle(audio=audio), future=None)  # type: ignore
-                # for audio in sample_audios
-            ]
-            + [
-                EmbeddingInner(
-                    content=EmbeddingSingle(sentence=s),
-                    future=None,  # type: ignore
-                )
-                for s in sample_text
-            ]
-        )
-        random.shuffle(inp)
-
-        return run_warmup(self, inp)
-
-
 class BaseClassifer(BaseTransformer):  # Inherit from ABC(Abstract base class)
     capabilities = {"classify"}
 
@@ -221,7 +128,7 @@ class BaseCrossEncoder(BaseTransformer):  # Inherit from ABC(Abstract base class
 
 
 BaseTypeHint = Union[
-    BaseTransformer, BaseEmbedder, BaseTIMM, BaseAudioEmbedModel, BaseClassifer, BaseCrossEncoder
+    BaseTransformer, BaseEmbedder, BaseClassifer, BaseCrossEncoder
 ]
 
 
