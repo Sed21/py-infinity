@@ -95,6 +95,16 @@ class OptimumEmbedder(BaseEmbedder):
                     filename=onnx_file.as_posix(),
                     revision=engine_args.revision,
                 )
+                # Also download external data file if exists (for large models like bge-m3)
+                data_file = onnx_file.as_posix() + "_data"
+                try:
+                    hf_hub_download(
+                        repo_id=engine_args.model_name_or_path,
+                        filename=data_file,
+                        revision=engine_args.revision,
+                    )
+                except Exception:
+                    pass  # External data file doesn't exist, that's fine
             else:
                 model_path = onnx_file.as_posix()
 
