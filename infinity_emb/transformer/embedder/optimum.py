@@ -49,6 +49,8 @@ class InferenceSessionWrapper:
         return {"last_hidden_state": outputs[0]}
 
 
+from huggingface_hub import hf_hub_download
+
 class OptimumEmbedder(BaseEmbedder):
     def __init__(self, *, engine_args: EngineArgs):
         CHECK_ONNXRUNTIME.mark_required()
@@ -86,9 +88,18 @@ class OptimumEmbedder(BaseEmbedder):
             sess_options.intra_op_num_threads = 0 # auto
             sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
             
+            if not onnx_file.exists():
+                model_path = hf_hub_download(
+                    repo_id=engine_args.model_name_or_path,
+                    filename=onnx_file.as_posix(),
+                    revision=engine_args.revision,
+                )
+            else:
+                model_path = onnx_file.as_posix()
+
             self.model = InferenceSessionWrapper(
                 session=ort.InferenceSession(
-                    onnx_file.as_posix(), 
+                    model_path, 
                     sess_options=sess_options, 
                     providers=[provider]
                 ),
