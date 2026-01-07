@@ -20,7 +20,7 @@ A slimmed-down fork of [infinity-emb](https://github.com/michaelfeil/infinity) f
 ONNX-only, no torch, ~364MB uncompressed. Best for pre-exported ONNX models.
 ```bash
 # Build
-docker build -t infinity:slim libs/infinity_emb
+docker build -t infinity:slim .
 
 # Run
 docker run -it -p 7997:7997 infinity:slim \
@@ -31,7 +31,7 @@ docker run -it -p 7997:7997 infinity:slim \
 Includes PyTorch + Optimum (~1.1GB). Supports model export and torch fallback.
 ```bash
 # Build
-docker build --build-arg ENGINE=full -t infinity:full libs/infinity_emb
+docker build --build-arg ENGINE=full -t infinity:full .
 
 # Run (can use --engine torch or --engine optimum)
 docker run -it -p 7997:7997 infinity:full \
@@ -44,10 +44,10 @@ We recommend **uv** for fast installation:
 
 ```bash
 # Install slim (ONNX only)
-uv pip install "libs/infinity_emb[slim]"
+uv pip install ".[slim]"
 
 # Install full (Torch + Optimum)
-uv pip install "libs/infinity_emb[full]" \
+uv pip install ".[full]" \
   --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
