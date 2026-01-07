@@ -20,14 +20,20 @@ from infinity_emb.primitives import Device
 if CHECK_ONNXRUNTIME.is_available:
     try:
         import onnxruntime as ort  # type: ignore
-        from optimum.modeling_base import OptimizedModel  # type: ignore
-        from optimum.onnxruntime import (  # type: ignore
-            ORTModel,
-            ORTOptimizer,
-        )
-        from optimum.onnxruntime.configuration import OptimizationConfig  # type: ignore
     except (ImportError, RuntimeError, Exception) as ex:
         CHECK_ONNXRUNTIME.mark_dirty(ex)
+
+try:
+    from optimum.modeling_base import OptimizedModel  # type: ignore
+    from optimum.onnxruntime import (  # type: ignore
+        ORTModel,
+        ORTOptimizer,
+    )
+    from optimum.onnxruntime.configuration import OptimizationConfig  # type: ignore
+except (ImportError, RuntimeError, Exception):
+    # Optimum is not installed, but onnxruntime might be.
+    # We define dummy classes for type hinting if needed or just handle it at runtime
+    pass
 
 
 def mean_pooling(last_hidden_states: np.ndarray, attention_mask: np.ndarray):

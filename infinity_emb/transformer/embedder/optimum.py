@@ -24,12 +24,29 @@ if CHECK_ONNXRUNTIME.is_available:
         from optimum.onnxruntime import (  # type: ignore[import-untyped]
             ORTModelForFeatureExtraction,
         )
-
-    except (ImportError, RuntimeError, Exception) as ex:
-        CHECK_ONNXRUNTIME.mark_dirty(ex)
+    except (ImportError, RuntimeError, Exception):
+        ORTModelForFeatureExtraction = None
+        import onnxruntime as ort
 
 if CHECK_TRANSFORMERS.is_available:
     from transformers import AutoConfig, AutoTokenizer  # type: ignore[import-untyped]
+
+
+class InferenceSessionWrapper:
+    """Wrapper for onnxruntime.InferenceSession to mimic ORTModel API for inference."""
+
+    def __init__(self, session, device) -> None:
+        self.session = session
+        self.device = device
+        self.use_io_binding = False
+
+    def __call__(self, **kwargs):
+        # kwargs = {"input_ids": ..., "attention_mask": ...}
+        # session.run expects output_names (None=all), input_feed (dict)
+        # We need to ensure inputs are numpy arrays (which they are from tokenizer)
+        inputs = {k: v for k, v in kwargs.items() if k in [i.name for i in self.session.get_inputs()]}
+        outputs = self.session.run(None, inputs)
+        return {"last_hidden_state": outputs[0]}
 
 
 class OptimumEmbedder(BaseEmbedder):
@@ -41,22 +58,43 @@ class OptimumEmbedder(BaseEmbedder):
             model_name_or_path=engine_args.model_name_or_path,
             revision=engine_args.revision,
             use_auth_token=True,
-            prefer_quantized=("cpu" in provider.lower() or "openvino" in provider.lower()) and not engine_args.onnx_do_not_prefer_quantized,
+            prefer_quantized=("cpu" in provider.lower() or "openvino" in provider.lower())
+            and not engine_args.onnx_do_not_prefer_quantized,
         )
 
         self.pooling = (
-            mean_pooling if engine_args.pooling_method == PoolingMethod.mean else cls_token_pooling
+            mean_pooling
+            if engine_args.pooling_method == PoolingMethod.mean
+            else cls_token_pooling
         )
 
-        self.model = optimize_model(
-            model_name_or_path=engine_args.model_name_or_path,
-            revision=engine_args.revision,
-            trust_remote_code=engine_args.trust_remote_code,
-            execution_provider=provider,
-            file_name=onnx_file.as_posix(),
-            optimize_model=not engine_args.onnx_disable_optimize,
-            model_class=ORTModelForFeatureExtraction,
-        )
+        if ORTModelForFeatureExtraction is not None:
+            self.model = optimize_model(
+                model_name_or_path=engine_args.model_name_or_path,
+                revision=engine_args.revision,
+                trust_remote_code=engine_args.trust_remote_code,
+                execution_provider=provider,
+                file_name=onnx_file.as_posix(),
+                optimize_model=not engine_args.onnx_disable_optimize,
+                model_class=ORTModelForFeatureExtraction,
+            )
+        else:
+            # Fallback to raw onnxruntime inference
+            logger.info("Optimum library not found. Using raw onnxruntime inference.")
+            sess_options = ort.SessionOptions()
+            # Recommended perf options for CPU
+            sess_options.intra_op_num_threads = 0 # auto
+            sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+            
+            self.model = InferenceSessionWrapper(
+                session=ort.InferenceSession(
+                    onnx_file.as_posix(), 
+                    sess_options=sess_options, 
+                    providers=[provider]
+                ),
+                device=engine_args.device
+            )
+
         self.model.use_io_binding = False
 
         self.tokenizer = AutoTokenizer.from_pretrained(
