@@ -7,6 +7,7 @@ import numpy as np
 
 from infinity_emb._optional_imports import CHECK_ONNXRUNTIME, CHECK_TRANSFORMERS
 from infinity_emb.args import EngineArgs
+from infinity_emb.log_handler import logger
 from infinity_emb.primitives import EmbeddingReturnType, PoolingMethod
 from infinity_emb.transformer.abstract import BaseEmbedder
 from infinity_emb.transformer.quantization.interface import quant_embedding_decorator

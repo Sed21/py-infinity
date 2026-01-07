@@ -20,8 +20,10 @@ if CHECK_ONNXRUNTIME.is_available:
             ORTModelForSequenceClassification,
         )
         from transformers import AutoConfig, AutoTokenizer  # type: ignore
-    except (ImportError, RuntimeError, Exception) as ex:
-        CHECK_ONNXRUNTIME.mark_dirty(ex)
+    except (ImportError, RuntimeError, Exception):
+        # Don't dirty CHECK_ONNXRUNTIME - optimum is optional for crossencoder
+        # The embedder can still work with raw onnxruntime
+        ORTModelForSequenceClassification = None
 
 
 class OptimumCrossEncoder(BaseCrossEncoder):

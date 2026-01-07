@@ -18,8 +18,9 @@ if CHECK_ONNXRUNTIME.is_available:
             ORTModelForSequenceClassification,
         )
 
-    except (ImportError, RuntimeError, Exception) as ex:
-        CHECK_ONNXRUNTIME.mark_dirty(ex)
+    except (ImportError, RuntimeError, Exception):
+        # Don't dirty CHECK_ONNXRUNTIME - optimum is optional
+        ORTModelForSequenceClassification = None
 
 if CHECK_TRANSFORMERS.is_available:
     from transformers import AutoTokenizer, pipeline  # type: ignore[import-untyped]

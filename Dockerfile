@@ -27,11 +27,11 @@ COPY infinity_emb ./infinity_emb
 # full: torch + optimum (~1.1GB) - maximum compatibility
 RUN if [ "$ENGINE" = "full" ]; then \
         echo "Installing FULL dependencies (torch + optimum)..." && \
-        uv pip install --system -e ".[full]" \
+        uv pip install --system ".[full]" \
             --extra-index-url https://download.pytorch.org/whl/cpu; \
     else \
         echo "Installing SLIM dependencies (ONNX-only)..." && \
-        uv pip install --system -e ".[slim]"; \
+        uv pip install --system ".[slim]"; \
     fi
 
 # Cleanup
@@ -48,7 +48,7 @@ ENV ENGINE=${ENGINE} \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HF_HOME=/app/.cache/huggingface \
-    INFINITY_ENGINE=${ENGINE}
+    INFINITY_ENGINE=optimum
 
 # Runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -69,9 +69,7 @@ WORKDIR /app
 
 EXPOSE 7997
 
-# Set default engine based on build arg
-# slim builds use optimum engine, full builds can use torch
-ENV INFINITY_ENGINE=${ENGINE:-optimum}
+# ENV INFINITY_ENGINE=${ENGINE:-optimum} -> handled above
 
 ENTRYPOINT ["infinity_emb"]
 CMD ["v2", "--port", "7997"]
