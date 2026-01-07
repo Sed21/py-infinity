@@ -2,7 +2,7 @@
 # Copyright (c) 2023-now michaelfeil
 
 """
-files just imports external dependencies. Do not import any infinity_emb modules here for sake of delayed imports.
+Optional imports for CPU-only infinity-emb.
 """
 
 from __future__ import annotations
@@ -57,25 +57,16 @@ class OptionalImports:
         raise ImportError(msg)
 
 
+# Core imports
 CHECK_AIOHTTP = OptionalImports("aiohttp", "server")
-CHECK_COLPALI_ENGINE = OptionalImports("colpali_engine", "vision")
-CHECK_CTRANSLATE2 = OptionalImports("ctranslate2", "ctranslate2")
+CHECK_CTRANSLATE2 = OptionalImports("ctranslate2", "ct2")
 CHECK_DISKCACHE = OptionalImports("diskcache", "cache")
 CHECK_FASTAPI = OptionalImports("fastapi", "server")
 CHECK_ONNXRUNTIME = OptionalImports("optimum.onnxruntime", "optimum")
 CHECK_OPTIMUM = OptionalImports("optimum", "optimum")
-CHECK_OPTIMUM_AMD = OptionalImports("optimum.amd", "optimum")
-CHECK_OPTIMUM_NEURON = OptionalImports(
-    "optimum.neuron",
-    "<neuronx not available as extra, only runs on AMI image, no pip install possible.>",
-)
-CHECK_PIL = OptionalImports("PIL", "vision")
-CHECK_POSTHOG = OptionalImports("posthog", "server")
 CHECK_PYDANTIC = OptionalImports("pydantic", "server")
 CHECK_SENTENCE_TRANSFORMERS = OptionalImports("sentence_transformers", "torch")
-CHECK_SOUNDFILE = OptionalImports("soundfile", "audio")
 CHECK_TORCH = OptionalImports("torch.nn", "torch")
 CHECK_TRANSFORMERS = OptionalImports("transformers", "torch")
 CHECK_TYPER = OptionalImports("typer", "server")
 CHECK_UVICORN = OptionalImports("uvicorn", "server")
-CHECK_XLA = OptionalImports("torch_xla", "torch_xla")

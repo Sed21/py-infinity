@@ -23,7 +23,6 @@ from infinity_emb.primitives import (
     ClassifyReturnType,
     EmbeddingReturnType,
     EmbeddingSingle,
-    ImageClassType,
     ModelCapabilites,
     ModelNotDeployedError,
     MatryoshkaDimError,
@@ -35,9 +34,7 @@ from infinity_emb.primitives import (
     get_inner_item,
 )
 
-from infinity_emb.transformer.audio.utils import resolve_audios
 from infinity_emb.transformer.utils import get_lengths_with_tokenize
-from infinity_emb.transformer.vision.utils import resolve_images
 
 if TYPE_CHECKING:
     from infinity_emb.transformer.abstract import BaseTypeHint
@@ -249,66 +246,6 @@ class BatchHandler:
             pass
 
         return classifications, usage
-
-    async def image_embed(
-        self,
-        *,
-        images: list[Union[str, "ImageClassType", bytes]],
-        matryoshka_dim: Optional[int] = None,
-    ) -> tuple[list["EmbeddingReturnType"], int]:
-        """Schedule a images and sentences to be embedded. Awaits until embedded.
-
-        Args:
-            images (list[Union[str, ImageClassType]]): list of pre-signed urls or ImageClassType objects
-
-        Raises:
-            ModelNotDeployedError: If loaded model does not expose `embed`
-                capabilities
-
-        Returns:
-            list["EmbeddingReturnType"]: list of embedding as 1darray
-            int: token usage
-        """
-
-        if "image_embed" not in self.capabilities:
-            raise ModelNotDeployedError(
-                "the loaded moded cannot fullyfill `image_embed`. "
-                f"Options are {self.capabilities}."
-            )
-
-        items = await resolve_images(images)
-        embeddings, usage = await self._schedule(items)
-        return matryososka_slice(embeddings, matryoshka_dim), usage
-
-    async def audio_embed(
-        self, *, audios: list[Union[str, bytes]], matryoshka_dim: Optional[int] = None
-    ) -> tuple[list["EmbeddingReturnType"], int]:
-        """Schedule audios and sentences to be embedded. Awaits until embedded.
-
-        Args:
-            audios (list[NDArray]): list of raw wave data
-
-        Raises:
-            ModelNotDeployedError: If loaded model does not expose `embed`
-                capabilities
-
-        Returns:
-            list["EmbeddingReturnType"]: list of embedding as 1darray
-            int: token usage
-        """
-
-        if "audio_embed" not in self.capabilities:
-            raise ModelNotDeployedError(
-                "the loaded moded cannot fullyfill `audio_embed`. "
-                f"Options are {self.capabilities}."
-            )
-
-        items = await resolve_audios(
-            audios,
-            getattr(self.model_worker[0]._model, "sampling_rate", -42),
-        )
-        embeddings, usage = await self._schedule(items)
-        return matryososka_slice(embeddings, matryoshka_dim), usage
 
     async def _schedule(self, list_queueitem: Sequence[AbstractSingle]) -> tuple[list[Any], int]:
         """adds list of items to the queue and awaits until these are completed."""

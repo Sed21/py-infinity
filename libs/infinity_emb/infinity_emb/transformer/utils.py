@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2023-now michaelfeil
 
+"""
+CPU-only transformer utilities - no vision or audio support.
+"""
+
 from enum import Enum
 from typing import Callable
 
 from infinity_emb.primitives import InferenceEngine
-from infinity_emb.transformer.audio.torch import TorchAudioModel
 from infinity_emb.transformer.classifier.torch import SentenceClassifier
 from infinity_emb.transformer.classifier.optimum import OptimumClassifier
 from infinity_emb.transformer.crossencoder.optimum import OptimumCrossEncoder
@@ -19,7 +22,6 @@ from infinity_emb.transformer.embedder.optimum import OptimumEmbedder
 from infinity_emb.transformer.embedder.sentence_transformer import (
     SentenceTransformerPatched,
 )
-from infinity_emb.transformer.vision.torch_vision import TIMM
 
 __all__ = [
     "length_tokenizer",
@@ -62,28 +64,6 @@ class RerankEngine(Enum):
             return RerankEngine.optimum
         else:
             raise NotImplementedError(f"RerankEngine for {engine} not implemented")
-
-
-class ImageEmbedEngine(Enum):
-    torch = TIMM
-
-    @staticmethod
-    def from_inference_engine(engine: InferenceEngine):
-        if engine == InferenceEngine.torch:
-            return ImageEmbedEngine.torch
-        else:
-            raise NotImplementedError(f"ImageEmbedEngine for {engine} not implemented")
-
-
-class AudioEmbedEngine(Enum):
-    torch = TorchAudioModel
-
-    @staticmethod
-    def from_inference_engine(engine: InferenceEngine):
-        if engine == InferenceEngine.torch:
-            return AudioEmbedEngine.torch
-        else:
-            raise NotImplementedError(f"AudioEmbedEngine for {engine} not implemented")
 
 
 class PredictEngine(Enum):
