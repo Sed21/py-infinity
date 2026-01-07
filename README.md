@@ -1,57 +1,54 @@
 # py-infinity ⚡
 
-**Minimal, high-performance CPU text embedding server.**
+**Minimal, high-performance CPU text embedding server (Optimum-first).**
 
-A slimmed-down fork of [infinity-emb](https://github.com/michaelfeil/infinity) focused on CPU-only text embeddings and reranking.
+A slimmed-down fork of [infinity-emb](https://github.com/michaelfeil/infinity) focused on CPU-only text embeddings with ONNX Runtime.
 
 ## Features
 
-- **Text Embeddings** - Deploy any sentence-transformer model from HuggingFace
-- **Reranking** - Cross-encoder models for document reranking
-- **Fast CPU Inference** - ONNX Runtime, CTranslate2, BetterTransformer
-- **Dynamic Batching** - Optimized throughput with automatic batching
-- **OpenAI-compatible API** - Drop-in replacement for OpenAI embeddings
+- **Optimum-First** - ONNX Runtime is the primary engine (fast cpu inference)
+- **Lazy Torch** - PyTorch is optional! Run totally torch-free for ~300MB image size
+- **Fast CPU Inference** - Optimized for modern CPUs
+- **Dynamic Batching** - High throughput with automatic batching
+- **OpenAI-compatible API** - Drop-in replacement
 
 ## Quick Start
 
 ### Docker (Recommended)
 
+**Option 1: Slim (default)**  
+ONNX-only, no torch, ~364MB uncompressed. Best for pre-exported ONNX models.
 ```bash
-docker build -f libs/infinity_emb/Dockerfile.cpu_auto -t infinity-cpu .
+# Build
+docker build -t infinity:slim libs/infinity_emb
 
-docker run -it -p 7997:7997 \
-  -v $PWD/cache:/app/.cache \
-  infinity-cpu \
+# Run
+docker run -it -p 7997:7997 infinity:slim \
   v2 --model-id BAAI/bge-small-en-v1.5 --engine optimum
 ```
 
-### pip install
-
+**Option 2: Full**  
+Includes PyTorch + Optimum (~1.1GB). Supports model export and torch fallback.
 ```bash
-pip install -e "libs/infinity_emb[server,torch,optimum,ct2,cache]"
-infinity_emb v2 --model-id BAAI/bge-small-en-v1.5
+# Build
+docker build --build-arg ENGINE=full -t infinity:full libs/infinity_emb
+
+# Run (can use --engine torch or --engine optimum)
+docker run -it -p 7997:7997 infinity:full \
+  v2 --model-id BAAI/bge-small-en-v1.5 --engine torch
 ```
 
-## API Usage
+### Installation (Python 3.13+)
 
-### Embeddings
-
-```bash
-curl -X POST http://localhost:7997/embeddings \
-  -H "Content-Type: application/json" \
-  -d '{"model": "BAAI/bge-small-en-v1.5", "input": ["Hello world", "Test sentence"]}'
-```
-
-### Reranking
+We recommend **uv** for fast installation:
 
 ```bash
-curl -X POST http://localhost:7997/rerank \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "mixedbread-ai/mxbai-rerank-xsmall-v1",
-    "query": "What is Python?",
-    "documents": ["Python is a programming language", "Paris is in France"]
-  }'
+# Install slim (ONNX only)
+uv pip install "libs/infinity_emb[slim]"
+
+# Install full (Torch + Optimum)
+uv pip install "libs/infinity_emb[full]" \
+  --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 ## Supported Models
@@ -60,55 +57,34 @@ curl -X POST http://localhost:7997/rerank \
 - [BAAI/bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5)
 - [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
 - [intfloat/multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small)
-- Most [sentence-transformers](https://huggingface.co/models?library=sentence-transformers) models
 
 ### Reranking
 - [mixedbread-ai/mxbai-rerank-xsmall-v1](https://huggingface.co/mixedbread-ai/mxbai-rerank-xsmall-v1)
-- [BAAI/bge-reranker-base](https://huggingface.co/BAAI/bge-reranker-base)
 
 ## Inference Engines
 
-| Engine | Best For |
-|--------|----------|
-| `--engine optimum` | ONNX models, fastest CPU inference |
-| `--engine torch` | PyTorch models, widest compatibility |
-| `--engine ctranslate2` | BERT models, int8 quantization |
+| Engine | Description | Included in |
+|--------|-------------|-------------|
+| `--engine optimum` | **Default**. ONNX Runtime. Fastest CPU inference. | Slim & Full |
+| `--engine torch` | PyTorch fallback. Slower, widely compatible. | Full Only |
 
 ## Configuration
 
 ```bash
 # Environment variables
 export INFINITY_MODEL_ID="BAAI/bge-small-en-v1.5"
-export INFINITY_ENGINE="optimum"
+export INFINITY_ENGINE="optimum" # or "torch"
 export INFINITY_BATCH_SIZE="32"
 export INFINITY_PORT="7997"
 
 infinity_emb v2
 ```
 
-## Python API
-
-```python
-import asyncio
-from infinity_emb import AsyncEngineArray, EngineArgs
-
-sentences = ["Hello world", "Test sentence"]
-engine = AsyncEngineArray.from_args([
-    EngineArgs(model_name_or_path="BAAI/bge-small-en-v1.5", engine="torch")
-])[0]
-
-async def embed():
-    async with engine:
-        embeddings, usage = await engine.embed(sentences=sentences)
-        print(f"Embeddings shape: {len(embeddings)}x{len(embeddings[0])}")
-
-asyncio.run(embed())
-```
-
 ## What's Removed (vs upstream)
 
-This fork removes GPU/vision/audio support for a minimal footprint:
+This fork removes heavy dependencies for a minimal footprint:
 
+- ❌ CTranslate2 engine (use Optimum instead)
 - ❌ GPU support (CUDA, ROCm, TensorRT)
 - ❌ Vision models (CLIP, ColPali)
 - ❌ Audio models (CLAP)
